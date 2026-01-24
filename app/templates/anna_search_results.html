@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Anna's Archive - {{ query }}{% endblock %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1>🌐 Anna's Archive</h1>
+            <div class="header-info">Results for "{{ query }}"</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<a href="/" class="btn btn-secondary btn-block mb-20">← Back to Library</a>
+
+{% if results %}
+    {% for result in results %}
+    <div class="book-item">
+        <div class="book-title">{{ result.title }}</div>
+        <div class="book-meta">
+            {% if result.author %}<span>👤 {{ result.author }}</span>{% endif %}
+            {% if result.year %}<span>📅 {{ result.year }}</span>{% endif %}
+            {% if result.extension %}<span>📄 {{ result.extension|upper }}</span>{% endif %}
+            {% if result.filesize %}<span>💾 {{ result.filesize }}</span>{% endif %}
+            {% if result.language %}<span>🌍 {{ result.language }}</span>{% endif %}
+        </div>
+        <a href="/add?md5={{ result.id|urlencode }}&title={{ result.title|urlencode }}" class="btn btn-success btn-block">
+            ➕ Add to Library
+        </a>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-books mb-20">
+        <p>🔍 No results found on Anna's Archive.</p>
+        <p style="margin-top: 10px; font-size: 14px;">Try a different search query.</p>
+    </div>
+{% endif %}
+
+<a href="/" class="btn btn-secondary btn-block">← Back to Library</a>
+{% endblock %}

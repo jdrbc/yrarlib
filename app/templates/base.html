@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}My Library{% endblock %}</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --success-hover: #059669;
+            --danger-color: #ef4444;
+            --secondary-color: #64748b;
+            --dark-bg: #1e293b;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --bg-color: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            background: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #334155 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info {
+            font-size: 14px;
+            opacity: 0.9;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Form Styles */
+        .search-form {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .search-form input {
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1.5;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn:disabled,
+        .btn-disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Book Item Styles */
+        .book-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .book-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .book-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .book-meta {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .book-meta span {
+            background: var(--bg-color);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .pagination .btn {
+            flex: 1;
+        }
+
+        .page-info {
+            text-align: center;
+            padding: 12px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        /* Messages */
+        .message {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .no-books {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            background: var(--card-bg);
+            border-radius: 12px;
+            font-size: 16px;
+            border: 2px dashed var(--border-color);
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 40px auto;
+            max-width: 500px;
+        }
+
+        .spinner {
+            border: 6px solid var(--border-color);
+            border-top: 6px solid var(--success-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-message {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-top: 15px;
+        }
+
+        /* Utility Classes */
+        .mt-20 { margin-top: 20px; }
+        .mb-20 { margin-bottom: 20px; }
+        .text-center { text-align: center; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .search-form {
+                flex-direction: row;
+            }
+
+            .search-form input {
+                flex: 1;
+            }
+
+            .search-form button {
+                flex: 0 0 auto;
+                min-width: 150px;
+            }
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    {% block header %}
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>📚 My Library</h1>
+                {% if header_info %}
+                <div class="header-info">{{ header_info }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

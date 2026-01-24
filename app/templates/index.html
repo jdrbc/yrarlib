@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}My Library{% endblock %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1>📚 My Library</h1>
+            <div class="header-info">{{ total_books }} books • Page {{ page }} of {{ total_pages if total_pages > 0 else 1 }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Search Library</h2>
+    <form action="/" method="GET" class="search-form">
+        <input type="text" name="q" placeholder="Search by title or author..." value="{{ search_query }}" required>
+        <button type="submit" class="btn btn-primary">Search Library</button>
+    </form>
+</div>
+
+<div class="pagination">
+    {% if has_prev %}
+        <a href="/?page={{ page - 1 }}" class="btn btn-secondary">← Previous</a>
+    {% else %}
+        <button class="btn btn-disabled" disabled>← Previous</button>
+    {% endif %}
+    
+    {% if has_next %}
+        <a href="/?page={{ page + 1 }}" class="btn btn-secondary">Next →</a>
+    {% else %}
+        <button class="btn btn-disabled" disabled>Next →</button>
+    {% endif %}
+</div>
+
+<div class="page-info">
+    Showing {{ books|length }} of {{ total_books }} books
+</div>
+
+{% if books %}
+    {% for book in books %}
+    <div class="book-item">
+        <div class="book-title">{{ book.filename }}</div>
+        <div class="book-meta">
+            <span>📅 {{ book.modified_date }}</span>
+            <span>💾 {{ book.size }}</span>
+        </div>
+        <a href="/download?file={{ book.relative_path|urlencode }}" class="btn btn-success btn-block">
+            Download
+        </a>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-books">
+        <p>📚 No books found in your library.</p>
+        <p style="margin-top: 10px; font-size: 14px;">Add some books to get started!</p>
+    </div>
+{% endif %}
+
+<div class="pagination">
+    {% if has_prev %}
+        <a href="/?page={{ page - 1 }}" class="btn btn-secondary">← Previous</a>
+    {% else %}
+        <button class="btn btn-disabled" disabled>← Previous</button>
+    {% endif %}
+    
+    {% if has_next %}
+        <a href="/?page={{ page + 1 }}" class="btn btn-secondary">Next →</a>
+    {% else %}
+        <button class="btn btn-disabled" disabled>Next →</button>
+    {% endif %}
+</div>
+{% endblock %}

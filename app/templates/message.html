@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1>{{ title }}</h1>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="message mb-20">
+    {{ message }}
+</div>
+
+{% if back_link %}
+<a href="/" class="btn btn-secondary btn-block">← Back to Library</a>
+{% endif %}
+{% endblock %}

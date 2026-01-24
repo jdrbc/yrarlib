@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - {{ query }}{% endblock %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1>🔍 Search Results</h1>
+            <div class="header-info">{{ books|length }} result{{ 's' if books|length != 1 else '' }} for "{{ query }}"</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<a href="/" class="btn btn-secondary btn-block mb-20">← Back to Library</a>
+
+<a href="/search-anna?q={{ query|urlencode }}" class="btn btn-primary btn-block mb-20">
+    🌐 Search Anna's Archive for "{{ query }}"
+</a>
+
+{% if books %}
+    {% for book in books %}
+    <div class="book-item">
+        <div class="book-title">{{ book.filename }}</div>
+        <div class="book-meta">
+            <span>📅 {{ book.modified_date }}</span>
+            <span>💾 {{ book.size }}</span>
+        </div>
+        <a href="/download?file={{ book.relative_path|urlencode }}" class="btn btn-success btn-block">
+            Download
+        </a>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-books mb-20">
+        <p>📚 No matching books found in your library.</p>
+        <p style="margin-top: 10px; font-size: 14px;">Try searching Anna's Archive above to add new books!</p>
+    </div>
+{% endif %}
+
+<a href="/" class="btn btn-secondary btn-block">← Back to Library</a>
+{% endblock %}

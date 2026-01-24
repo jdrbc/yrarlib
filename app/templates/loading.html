@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block header %}
+<div class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1>{{ title }}</h1>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="loading-container">
+    <div class="spinner"></div>
+    <div class="loading-message">{{ message }}</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    setTimeout(function() {
+        window.location.href = "{{ target_url }}";
+    }, 3000);
+</script>
+{% endblock %}
