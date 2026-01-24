@@ -23,7 +23,8 @@ from anna_integration import search_books, download_book
 load_dotenv()
 
 # Configuration
-LIBRARY_PATH = Path(__file__).parent.parent / "test_library"
+LIBRARY_PATH = Path(os.environ.get('LIBRARY_PATH', Path(__file__).parent.parent / "test_library"))
+DOWNLOAD_DIR = Path(os.environ.get('DOWNLOAD_DIR', LIBRARY_PATH))
 PORT = 26657  # Spells 'BOOKS' on phone keypad (B=2, O=6, O=6, K=5, S=7)
 
 
@@ -131,7 +132,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
             from html_generator import generate_loading_html
             
             # Download the book (this happens server-side)
-            filepath = download_book(md5, LIBRARY_PATH, title)
+            filepath = download_book(md5, DOWNLOAD_DIR, title)
             
             if filepath:
                 # Show loading page that redirects to success page
@@ -247,6 +248,7 @@ def run_server(port=PORT):
     
     print(f"Library server starting on port {port}")
     print(f"Library path: {LIBRARY_PATH}")
+    print(f"Download dir: {DOWNLOAD_DIR}")
     print(f"Access the library at: http://localhost:{port}")
     print(f"Or from Kobo: http://<your-ip>:{port}")
     print("\nPress Ctrl+C to stop the server")
