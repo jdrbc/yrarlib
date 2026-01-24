@@ -292,6 +292,9 @@ anna = "anna_poc.anna_cli:cli"
 EOL
     fi
     
+    # Set ownership before creating venv
+    chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
+    
     # Set up Python environment with uv
     print_status "Setting up Python environment with uv..."
     cd "$APP_DIR"
@@ -304,9 +307,6 @@ EOL
     if [ -d "$APP_DIR/anna_poc" ]; then
         sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc"
     fi
-    
-    # Set ownership
-    chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
     
     print_success "Application installed to $APP_DIR"
 }
