@@ -85,19 +85,30 @@ check_prerequisites() {
         missing+=("python3")
     fi
     
-    # Check for uv
+    # Check for uv (check both PATH and common install locations)
+    UV_PATH=""
     if command -v uv &> /dev/null; then
-        print_info "uv $(uv --version | head -1) ✓"
+        UV_PATH=$(command -v uv)
+    elif [ -f "$HOME/.local/bin/uv" ]; then
+        UV_PATH="$HOME/.local/bin/uv"
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    
+    if [ -n "$UV_PATH" ]; then
+        print_info "uv $($UV_PATH --version | head -1) ✓"
     else
         print_warning "uv not found - will attempt to install"
         if confirm "Install uv now?"; then
             curl -LsSf https://astral.sh/uv/install.sh | sh
             export PATH="$HOME/.local/bin:$PATH"
-            if ! command -v uv &> /dev/null; then
+            if [ -f "$HOME/.local/bin/uv" ]; then
+                print_success "uv installed to $HOME/.local/bin"
+            elif command -v uv &> /dev/null; then
+                print_success "uv installed"
+            else
                 print_error "Failed to install uv"
                 exit 1
             fi
-            print_success "uv installed"
         else
             missing+=("uv")
         fi
