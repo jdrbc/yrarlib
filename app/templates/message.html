@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - rarylib{% endblock %}
 
 {% block header %}
 <div class="header">
     <div class="container">
         <div class="header-content">
-            <h1>{{ title }}</h1>
+            <h1>rarylib</h1>
+            <div class="header-info">{{ title }}</div>
         </div>
     </div>
 </div>
@@ -18,6 +19,6 @@
 </div>
 
 {% if back_link %}
-<a href="/" class="btn btn-secondary btn-block">← Back to Library</a>
+<a href="/" class="btn btn-secondary btn-block">Back to Library</a>
 {% endif %}
 {% endblock %}
