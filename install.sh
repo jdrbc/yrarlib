@@ -199,6 +199,12 @@ configure_interactive() {
     read -r -p "Index rebuild interval in seconds (0 to disable) [$default_interval]: " INDEX_INTERVAL
     INDEX_INTERVAL="${INDEX_INTERVAL:-$default_interval}"
     
+    # Fast download key (for Anna's Archive)
+    echo ""
+    print_info "Anna's Archive fast download key (optional, for faster downloads)"
+    print_info "Get one at: https://annas-archive.li/account"
+    read -r -p "Fast download key (leave empty to skip): " FAST_DOWNLOAD_KEY
+    
     echo ""
     print_status "Configuration Summary:"
     print_info "Library path:     $LIBRARY_PATH"
@@ -206,6 +212,11 @@ configure_interactive() {
     print_info "Bind address:     $BIND_ADDRESS"
     print_info "Download dir:     $DOWNLOAD_DIR"
     print_info "Index interval:   ${INDEX_INTERVAL}s"
+    if [ -n "$FAST_DOWNLOAD_KEY" ]; then
+        print_info "Fast download:    configured"
+    else
+        print_info "Fast download:    not configured"
+    fi
     echo ""
     
     if ! confirm "Proceed with installation?"; then
@@ -231,9 +242,10 @@ SERVER_PORT="$SERVER_PORT"
 BIND_ADDRESS="$BIND_ADDRESS"
 DOWNLOAD_DIR="$DOWNLOAD_DIR"
 INDEX_INTERVAL="$INDEX_INTERVAL"
+FAST_DOWNLOAD_KEY="$FAST_DOWNLOAD_KEY"
 EOL
     
-    chmod 644 "$CONFIG_FILE"
+    chmod 600 "$CONFIG_FILE"  # Restrict permissions since it contains a key
     print_success "Configuration saved to $CONFIG_FILE"
 }
 

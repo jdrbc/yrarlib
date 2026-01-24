@@ -196,6 +196,13 @@ def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[
                 safe_title = re.sub(r'[^\w\s\-\.]', '', title)
                 safe_title = safe_title[:100]  # Limit length
                 
+                # Remove existing extension if present
+                known_extensions = ['.epub', '.pdf', '.mobi', '.azw3', '.azw', '.djvu', '.txt', '.fb2']
+                for ext in known_extensions:
+                    if safe_title.lower().endswith(ext):
+                        safe_title = safe_title[:-len(ext)]
+                        break
+                
                 # Guess extension from Content-Type
                 content_type = response.headers.get('Content-Type', '')
                 ext = 'epub'

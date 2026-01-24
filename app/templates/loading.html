@@ -23,7 +23,7 @@
 {% block extra_scripts %}
 <script>
     setTimeout(function() {
-        window.location.href = "{{ target_url }}";
+        window.location.href = "{{ target_url | safe }}";
     }, 3000);
 </script>
 {% endblock %}
