@@ -18,6 +18,41 @@ def get_fast_download_key() -> str:
     return key
 
 
+def sort_results_by_preference(results: List[Dict], preferred_language: str = "English", preferred_format: str = "epub") -> List[Dict]:
+    """
+    Sort search results to prioritize preferred language and format.
+    
+    Args:
+        results: List of book dictionaries from search
+        preferred_language: Preferred language (default: English)
+        preferred_format: Preferred file format (default: epub)
+        
+    Returns:
+        Sorted list with preferred results first
+    """
+    def score(book: Dict) -> int:
+        """Calculate preference score (lower is better)."""
+        s = 0
+        
+        # Language match is most important
+        book_lang = book.get('language', '').lower()
+        if book_lang and book_lang == preferred_language.lower():
+            s -= 100
+        elif not book_lang:
+            s -= 10  # Unknown language gets slight preference over known non-match
+        
+        # Format match is secondary
+        book_ext = book.get('extension', '').lower()
+        if book_ext and book_ext == preferred_format.lower():
+            s -= 50
+        elif not book_ext:
+            s -= 5  # Unknown format gets slight preference over known non-match
+        
+        return s
+    
+    return sorted(results, key=score)
+
+
 def search_books(query: str, limit: int = 10) -> List[Dict]:
     """
     Search Anna's Archive for books.

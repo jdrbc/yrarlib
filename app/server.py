@@ -16,7 +16,7 @@ from html_generator import (
     generate_message_html,
     generate_loading_html
 )
-from anna_integration import search_books, download_book
+from anna_integration import search_books, download_book, sort_results_by_preference
 
 
 # Load environment variables
@@ -25,6 +25,8 @@ load_dotenv()
 # Configuration
 LIBRARY_PATH = Path(os.environ.get('LIBRARY_PATH', Path(__file__).parent.parent / "test_library"))
 DOWNLOAD_DIR = Path(os.environ.get('DOWNLOAD_DIR', LIBRARY_PATH))
+PREFERRED_LANGUAGE = os.environ.get('PREFERRED_LANGUAGE', 'English')
+PREFERRED_FORMAT = os.environ.get('PREFERRED_FORMAT', 'epub')
 PORT = 26657  # Spells 'BOOKS' on phone keypad (B=2, O=6, O=6, K=5, S=7)
 
 
@@ -92,6 +94,9 @@ class LibraryHandler(BaseHTTPRequestHandler):
         try:
             # Search Anna's Archive
             results = search_books(query, limit=10)
+            
+            # Sort results by user preferences (language and format)
+            results = sort_results_by_preference(results, PREFERRED_LANGUAGE, PREFERRED_FORMAT)
             
             # Generate results HTML
             html = generate_search_results_html(results, query)
