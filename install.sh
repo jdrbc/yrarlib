@@ -272,36 +272,23 @@ setup_application() {
     print_status "Copying application files..."
     cp -r "$SOURCE_DIR/app" "$APP_DIR/" 2>/dev/null || true
     cp -r "$SOURCE_DIR/anna_poc" "$APP_DIR/" 2>/dev/null || true
-    cp "$SOURCE_DIR/pyproject.toml" "$APP_DIR/" 2>/dev/null || true
-    
-    # Create pyproject.toml if it doesn't exist at root level
-    if [ ! -f "$APP_DIR/pyproject.toml" ]; then
-        cat > "$APP_DIR/pyproject.toml" << 'EOL'
-[project]
-name = "library-app"
-version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "requests>=2.28.0",
-    "beautifulsoup4>=4.11.0",
-    "click>=8.0.0",
-]
-
-[project.scripts]
-anna = "anna_poc.anna_cli:cli"
-EOL
-    fi
     
     # Set ownership before creating venv
     chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
     
     # Set up Python environment with uv
     print_status "Setting up Python environment with uv..."
-    cd "$APP_DIR"
     
-    # Create virtual environment and install dependencies
+    # Create virtual environment
     sudo -u "$SERVICE_USER" "$UV_PATH" venv "$APP_DIR/.venv"
-    sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR"
+    
+    # Install the app package from the app/ subdirectory (has correct dependencies)
+    if [ -d "$APP_DIR/app" ] && [ -f "$APP_DIR/app/pyproject.toml" ]; then
+        sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/app"
+    else
+        print_error "app/pyproject.toml not found"
+        exit 1
+    fi
     
     # Install anna_poc if it exists
     if [ -d "$APP_DIR/anna_poc" ]; then
@@ -556,7 +543,11 @@ do_update() {
     # Update dependencies
     print_status "Updating dependencies..."
     cd "$APP_DIR"
-    sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR" --upgrade
+    
+    # Update app dependencies
+    if [ -d "$APP_DIR/app" ] && [ -f "$APP_DIR/app/pyproject.toml" ]; then
+        sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/app" --upgrade
+    fi
     
     if [ -d "$APP_DIR/anna_poc" ]; then
         sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc" --upgrade
