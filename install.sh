@@ -13,6 +13,7 @@ APP_DIR="/opt/$APP_NAME"
 CONFIG_FILE="/etc/$APP_NAME/config.env"
 LOG_DIR="/var/log/$APP_NAME"
 SERVICE_NAME="$APP_NAME"
+UV_PATH=""
 
 # ============================================================================
 # Helper Functions
@@ -293,12 +294,12 @@ EOL
     cd "$APP_DIR"
     
     # Create virtual environment and install dependencies
-    sudo -u "$SERVICE_USER" uv venv "$APP_DIR/.venv"
-    sudo -u "$SERVICE_USER" uv pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR"
+    sudo -u "$SERVICE_USER" "$UV_PATH" venv "$APP_DIR/.venv"
+    sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR"
     
     # Install anna_poc if it exists
     if [ -d "$APP_DIR/anna_poc" ]; then
-        sudo -u "$SERVICE_USER" uv pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc"
+        sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc"
     fi
     
     # Set ownership
@@ -552,10 +553,10 @@ do_update() {
     # Update dependencies
     print_status "Updating dependencies..."
     cd "$APP_DIR"
-    sudo -u "$SERVICE_USER" uv pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR" --upgrade
+    sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR" --upgrade
     
     if [ -d "$APP_DIR/anna_poc" ]; then
-        sudo -u "$SERVICE_USER" uv pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc" --upgrade
+        sudo -u "$SERVICE_USER" "$UV_PATH" pip install --python "$APP_DIR/.venv/bin/python" -e "$APP_DIR/anna_poc" --upgrade
     fi
     
     # Fix ownership
