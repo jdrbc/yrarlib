@@ -19,17 +19,17 @@
 {% if results %}
     {% for result in results %}
     <div class="book-item">
-        <div class="book-title">{{ result.title }}</div>
-        <div class="book-meta">
-            {% if result.author %}<span>{{ result.author }}</span>{% endif %}
-            {% if result.year %}<span>{{ result.year }}</span>{% endif %}
-            {% if result.extension %}<span>{{ result.extension|upper }}</span>{% endif %}
-            {% if result.filesize %}<span>{{ result.filesize }}</span>{% endif %}
-            {% if result.language %}<span>{{ result.language }}</span>{% endif %}
+        <div class="book-info">
+            <div class="book-title">{{ result.title }}</div>
+            <div class="book-meta">
+                {% if result.author %}<span>{{ result.author }}</span>{% endif %}
+                {% if result.year %}<span>{{ result.year }}</span>{% endif %}
+                {% if result.extension %}<span>{{ result.extension|upper }}</span>{% endif %}
+                {% if result.filesize %}<span>{{ result.filesize }}</span>{% endif %}
+                {% if result.language %}<span>{{ result.language }}</span>{% endif %}
+            </div>
         </div>
-        <a href="/add?md5={{ result.id|urlencode }}&title={{ result.title|urlencode }}" class="btn btn-success btn-block">
-            Add to Library
-        </a>
+        <a href="/add?md5={{ result.id|urlencode }}&title={{ result.title|urlencode }}" class="btn-download">+</a>
     </div>
     {% endfor %}
 {% else %}

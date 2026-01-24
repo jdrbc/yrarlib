@@ -41,14 +41,14 @@
 {% if books %}
     {% for book in books %}
     <div class="book-item">
-        <div class="book-title">{{ book.filename }}</div>
-        <div class="book-meta">
-            <span>{{ book.modified_date }}</span>
-            <span>{{ book.size }}</span>
+        <div class="book-info">
+            <div class="book-title">{{ book.filename }}</div>
+            <div class="book-meta">
+                <span>{{ book.modified_date }}</span>
+                <span>{{ book.size }}</span>
+            </div>
         </div>
-        <a href="/download?file={{ book.relative_path|urlencode }}" class="btn btn-success btn-block">
-            Download
-        </a>
+        <a href="/download?file={{ book.relative_path|urlencode }}" class="btn-download">DL</a>
     </div>
     {% endfor %}
 {% else %}
