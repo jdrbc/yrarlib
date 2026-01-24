@@ -522,6 +522,9 @@ do_update() {
         exit 1
     fi
     
+    # Check prerequisites (sets UV_PATH)
+    check_prerequisites
+    
     local SERVICE_USER=$(get_service_user)
     local SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     
