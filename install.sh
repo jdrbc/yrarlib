@@ -86,28 +86,31 @@ check_prerequisites() {
         missing+=("python3")
     fi
     
-    # Check for uv (check both PATH and common install locations)
+    # Check for uv (check for service user's installation)
+    SERVICE_USER=$(get_service_user)
+    SERVICE_USER_HOME=$(eval echo ~$SERVICE_USER)
     UV_PATH=""
-    if command -v uv &> /dev/null; then
-        UV_PATH=$(command -v uv)
-    elif [ -f "$HOME/.local/bin/uv" ]; then
-        UV_PATH="$HOME/.local/bin/uv"
-        export PATH="$HOME/.local/bin:$PATH"
+    
+    # Check in service user's local bin first
+    if [ -f "$SERVICE_USER_HOME/.local/bin/uv" ]; then
+        UV_PATH="$SERVICE_USER_HOME/.local/bin/uv"
+    # Then check if uv is in PATH when running as service user
+    elif sudo -u "$SERVICE_USER" command -v uv &> /dev/null; then
+        UV_PATH=$(sudo -u "$SERVICE_USER" command -v uv)
     fi
     
     if [ -n "$UV_PATH" ]; then
         print_info "uv $($UV_PATH --version | head -1) ✓"
     else
-        print_warning "uv not found - will attempt to install"
-        if confirm "Install uv now?"; then
-            curl -LsSf https://astral.sh/uv/install.sh | sh
-            export PATH="$HOME/.local/bin:$PATH"
-            if [ -f "$HOME/.local/bin/uv" ]; then
-                print_success "uv installed to $HOME/.local/bin"
-            elif command -v uv &> /dev/null; then
-                print_success "uv installed"
+        print_warning "uv not found for user $SERVICE_USER - will attempt to install"
+        if confirm "Install uv for $SERVICE_USER now?"; then
+            # Install as the service user, not as root
+            sudo -u "$SERVICE_USER" bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+            UV_PATH="$SERVICE_USER_HOME/.local/bin/uv"
+            if [ -f "$UV_PATH" ]; then
+                print_success "uv installed to $UV_PATH"
             else
-                print_error "Failed to install uv"
+                print_error "Failed to install uv for $SERVICE_USER"
                 exit 1
             fi
         else
