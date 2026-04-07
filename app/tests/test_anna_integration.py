@@ -1,6 +1,6 @@
 import requests
 
-from anna_integration import download_book, get_download_urls, search_books
+from anna_integration import download_book, get_anna_archive_base_urls, get_download_urls, search_books
 
 
 class FakeResponse:
@@ -111,3 +111,14 @@ def test_download_book_tries_next_link_after_failure(monkeypatch, tmp_path):
     assert downloaded_path is not None
     assert downloaded_path.name == "good.epub"
     assert downloaded_path.read_bytes() == b"helloworld"
+
+
+def test_default_known_good_domains_include_gl_pk_gd(monkeypatch):
+    monkeypatch.delenv("ANNA_ARCHIVE_BASE_URLS", raising=False)
+    base_urls = get_anna_archive_base_urls()
+
+    assert "https://annas-archive.org" in base_urls
+    assert "https://annas-archive.li" in base_urls
+    assert "https://annas-archive.gl" in base_urls
+    assert "https://annas-archive.pk" in base_urls
+    assert "https://annas-archive.gd" in base_urls
