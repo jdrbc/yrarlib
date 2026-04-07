@@ -32,9 +32,14 @@ def get_anna_archive_base_urls() -> List[str]:
     Get Anna's Archive base URLs in fallback order.
 
     Supports override via ANNA_ARCHIVE_BASE_URLS as a comma-separated list.
+    Override URLs are tried first, but known-good defaults are always included
+    as fallback mirrors.
     """
     override = os.getenv("ANNA_ARCHIVE_BASE_URLS", "").strip()
-    raw_urls = override.split(",") if override else list(DEFAULT_ANNA_ARCHIVE_BASE_URLS)
+    raw_urls: List[str] = []
+    if override:
+        raw_urls.extend(override.split(","))
+    raw_urls.extend(DEFAULT_ANNA_ARCHIVE_BASE_URLS)
 
     urls = []
     seen = set()
