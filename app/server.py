@@ -2,6 +2,7 @@
 Library Server - Simple HTTP server for Kobo-friendly book library
 """
 
+import errno
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
@@ -32,6 +33,31 @@ PORT = 26657  # Spells 'BOOKS' on phone keypad (B=2, O=6, O=6, K=5, S=7)
 
 class LibraryHandler(BaseHTTPRequestHandler):
     """HTTP request handler for the library server."""
+
+    @staticmethod
+    def _is_client_disconnect(error: Exception) -> bool:
+        """Return True if error is a normal client disconnect."""
+        if isinstance(error, (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, TimeoutError)):
+            return True
+        if isinstance(error, OSError):
+            return error.errno in (errno.EPIPE, errno.ECONNRESET, errno.ECONNABORTED)
+        return False
+
+    @staticmethod
+    def _safe_write_response(handler: BaseHTTPRequestHandler, status_code: int, html: str) -> bool:
+        """Write an HTML response while tolerating normal client disconnects."""
+        try:
+            handler.send_response(status_code)
+            handler.send_header('Content-type', 'text/html; charset=utf-8')
+            handler.end_headers()
+            handler.wfile.write(html.encode('utf-8'))
+            return True
+        except Exception as e:
+            if LibraryHandler._is_client_disconnect(e):
+                if hasattr(handler, "log_message"):
+                    handler.log_message("Client disconnected while sending response")
+                return False
+            raise
     
     def do_GET(self):
         """Handle GET requests."""
@@ -71,10 +97,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
             pagination_data = paginate_books(books, page=page, per_page=15)
             html = generate_index_html(pagination_data)
         
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write(html.encode('utf-8'))
+        self._safe_write_response(self, 200, html)
     
     def handle_anna_search(self, query_params):
         """Handle Anna's Archive search requests."""
@@ -85,10 +108,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
                 "Search Error",
                 "Please enter a search query."
             )
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+            self._safe_write_response(self, 400, html)
             return
         
         try:
@@ -101,20 +121,14 @@ class LibraryHandler(BaseHTTPRequestHandler):
             # Generate results HTML
             html = generate_search_results_html(results, query)
             
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+            self._safe_write_response(self, 200, html)
             
         except Exception as e:
             html = generate_message_html(
                 "Search Error",
                 f"Error searching: {str(e)}"
             )
-            self.send_response(500)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+            self._safe_write_response(self, 500, html)
     
     def handle_add(self, query_params):
         """Handle adding a book from Anna's Archive to the library."""
@@ -126,10 +140,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
                 "Download Error",
                 "No book selected."
             )
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+            self._safe_write_response(self, 400, html)
             return
         
         try:
@@ -146,7 +157,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
                     f"Downloading '{title or 'book'}' to your library...",
                     f"/download-complete?success=1&filename={filepath.name}"
                 )
-                self.send_response(200)
+                self._safe_write_response(self, 200, html)
             else:
                 # Show loading page that redirects to failure page
                 html = generate_loading_html(
@@ -154,21 +165,14 @@ class LibraryHandler(BaseHTTPRequestHandler):
                     "Attempting to download...",
                     "/download-complete?success=0"
                 )
-                self.send_response(200)
-            
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+                self._safe_write_response(self, 200, html)
             
         except Exception as e:
             html = generate_message_html(
                 "Download Error",
                 f"Error: {str(e)}"
             )
-            self.send_response(500)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(html.encode('utf-8'))
+            self._safe_write_response(self, 500, html)
     
     def handle_download_complete(self, query_params):
         """Handle download completion redirect page."""
@@ -186,10 +190,7 @@ class LibraryHandler(BaseHTTPRequestHandler):
                 "Could not download the book. Please try again."
             )
         
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write(html.encode('utf-8'))
+        self._safe_write_response(self, 200, html)
     
     def handle_download(self, query_params):
         """Handle book file downloads."""
@@ -239,6 +240,9 @@ class LibraryHandler(BaseHTTPRequestHandler):
             self.wfile.write(content)
             
         except Exception as e:
+            if self._is_client_disconnect(e):
+                self.log_message("Client disconnected during file download")
+                return
             self.send_error(500, f"Error reading file: {str(e)}")
     
     def log_message(self, format, *args):
