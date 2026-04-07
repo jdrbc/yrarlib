@@ -18,6 +18,17 @@
     {{ message }}
 </div>
 
+{% if details %}
+<div class="message-details mb-20">
+    <div class="message-details-title">Debug Details</div>
+    <ul class="message-details-list">
+        {% for detail in details %}
+        <li>{{ detail }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 {% if back_link %}
 <a href="/" class="btn btn-secondary btn-block">Back to Library</a>
 {% endif %}

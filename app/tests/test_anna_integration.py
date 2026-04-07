@@ -1,6 +1,8 @@
 import requests
 
 from anna_integration import download_book, get_anna_archive_base_urls, get_download_urls, search_books
+from html_generator import generate_message_html
+from server import LibraryHandler
 
 
 class FakeResponse:
@@ -87,7 +89,7 @@ def test_download_book_tries_next_link_after_failure(monkeypatch, tmp_path):
     md5 = "0123456789abcdef0123456789abcdef"
     links = ["https://bad-link.example/file.epub", "https://good-link.example/file.epub"]
 
-    monkeypatch.setattr("anna_integration.get_download_urls", lambda _: links)
+    monkeypatch.setattr("anna_integration.get_download_urls", lambda _, diagnostics=None: links)
     call_urls = []
 
     def fake_get(url, headers=None, stream=None, timeout=None, **kwargs):
@@ -122,3 +124,62 @@ def test_default_known_good_domains_include_gl_pk_gd(monkeypatch):
     assert "https://annas-archive.gl" in base_urls
     assert "https://annas-archive.pk" in base_urls
     assert "https://annas-archive.gd" in base_urls
+
+
+def test_safe_write_response_ignores_connection_reset():
+    class FakeHandler:
+        def __init__(self):
+            self.calls = []
+
+        def send_response(self, code):
+            self.calls.append(("send_response", code))
+
+        def send_header(self, key, value):
+            self.calls.append(("send_header", key, value))
+
+        def end_headers(self):
+            raise ConnectionResetError("client disconnected")
+
+    handler = FakeHandler()
+    # Should not raise even if headers cannot be flushed to disconnected client.
+    success = LibraryHandler._safe_write_response(handler, 200, "<html></html>")
+    assert success is False
+
+
+def test_safe_write_response_returns_true_on_success():
+    class FakeWriter:
+        def __init__(self):
+            self.data = b""
+
+        def write(self, content):
+            self.data += content
+
+    class FakeHandler:
+        def __init__(self):
+            self.wfile = FakeWriter()
+            self.calls = []
+
+        def send_response(self, code):
+            self.calls.append(("send_response", code))
+
+        def send_header(self, key, value):
+            self.calls.append(("send_header", key, value))
+
+        def end_headers(self):
+            self.calls.append(("end_headers",))
+
+    handler = FakeHandler()
+    success = LibraryHandler._safe_write_response(handler, 200, "<html>ok</html>")
+    assert success is True
+    assert handler.wfile.data == b"<html>ok</html>"
+
+
+def test_generate_message_html_renders_debug_details():
+    html = generate_message_html(
+        "Download Failed",
+        "Could not download the book. Please try again.",
+        details=["debug_id=d123", "Attempt 1 failed: HTTPError: HTTP 503"],
+    )
+    assert "Debug Details" in html
+    assert "debug_id=d123" in html
+    assert "Attempt 1 failed: HTTPError: HTTP 503" in html
