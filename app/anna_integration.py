@@ -12,6 +12,9 @@ import re
 DEFAULT_ANNA_ARCHIVE_BASE_URLS = (
     "https://annas-archive.org",
     "https://annas-archive.li",
+    "https://annas-archive.gl",
+    "https://annas-archive.pk",
+    "https://annas-archive.gd",
 )
 
 
