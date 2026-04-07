@@ -6,8 +6,9 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import re
+from urllib.parse import urlsplit, urlunsplit
 
 DEFAULT_ANNA_ARCHIVE_BASE_URLS = (
     "https://annas-archive.org",
@@ -225,7 +226,13 @@ def _extract_download_links(data: Any) -> List[str]:
     return links
 
 
-def get_download_urls(md5_hash: str) -> List[str]:
+def _sanitize_url_for_logs(url: str) -> str:
+    """Strip query and fragment from URLs before logging/displaying."""
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+
+
+def get_download_urls(md5_hash: str, diagnostics: Optional[List[str]] = None) -> List[str]:
     """
     Get download URLs for a book using the JSON API across mirrors.
 
@@ -246,6 +253,8 @@ def get_download_urls(md5_hash: str) -> List[str]:
 
     for base_url in get_anna_archive_base_urls():
         api_url = f"{base_url}/dyn/api/fast_download.json"
+        if diagnostics is not None:
+            diagnostics.append(f"Fast download API: {api_url}")
 
         try:
             response = requests.get(api_url, params=params, headers=headers, timeout=30)
@@ -254,12 +263,18 @@ def get_download_urls(md5_hash: str) -> List[str]:
             data = response.json()
             links = _extract_download_links(data)
             if links:
+                if diagnostics is not None:
+                    diagnostics.append(f"Found {len(links)} candidate link(s) from {base_url}")
                 return links
 
             print(f"No download links found via {base_url}")
+            if diagnostics is not None:
+                diagnostics.append(f"No download links returned by {base_url}")
 
         except Exception as e:
             print(f"Error fetching download URLs via {base_url}: {e}")
+            if diagnostics is not None:
+                diagnostics.append(f"API error via {base_url}: {type(e).__name__}: {e}")
 
     return []
 
@@ -278,34 +293,43 @@ def get_download_url(md5_hash: str) -> Optional[str]:
     return download_urls[0] if download_urls else None
 
 
-def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[Path]:
+def download_book_with_diagnostics(md5_hash: str, output_dir: Path, title: str = "") -> Tuple[Optional[Path], List[str]]:
     """
-    Download a book from Anna's Archive.
-    
+    Download a book and return detailed diagnostics for debugging.
+
     Args:
         md5_hash: MD5 hash of the book
         output_dir: Directory to save the downloaded file
         title: Optional title for filename
-        
+
     Returns:
-        Path to the downloaded file or None if failed
+        Tuple of (downloaded filepath or None, diagnostics list)
     """
-    download_urls = get_download_urls(md5_hash)
+    diagnostics: List[str] = [f"Starting download for md5={md5_hash} title={title or '<untitled>'}"]
+    download_urls = get_download_urls(md5_hash, diagnostics=diagnostics)
 
     if not download_urls:
+        diagnostics.append("Could not resolve any download links.")
         print("Could not get download URLs")
-        return None
+        return None, diagnostics
 
+    diagnostics.append(f"Resolved {len(download_urls)} candidate link(s).")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
 
     for idx, download_url in enumerate(download_urls, start=1):
         filepath = None
+        safe_url = _sanitize_url_for_logs(download_url)
+        diagnostics.append(f"Attempt {idx}/{len(download_urls)}: GET {safe_url}")
 
         try:
             response = requests.get(download_url, headers=headers, stream=True, timeout=60)
             response.raise_for_status()
+            content_type = response.headers.get('Content-Type', '')
+            diagnostics.append(
+                f"Attempt {idx}: HTTP {response.status_code}, Content-Type={content_type or '<missing>'}"
+            )
 
             # Try to get filename from Content-Disposition header
             filename = None
@@ -329,7 +353,6 @@ def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[
                             break
 
                     # Guess extension from Content-Type
-                    content_type = response.headers.get('Content-Type', '')
                     ext = 'epub'
                     if 'pdf' in content_type:
                         ext = 'pdf'
@@ -344,6 +367,7 @@ def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[
             output_dir.mkdir(parents=True, exist_ok=True)
 
             filepath = output_dir / filename
+            diagnostics.append(f"Saving to {filepath}")
 
             # Download in chunks
             with open(filepath, 'wb') as f:
@@ -351,13 +375,33 @@ def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[
                     if chunk:
                         f.write(chunk)
 
+            diagnostics.append(f"Downloaded successfully: {filename}")
             print(f"Downloaded: {filename}")
-            return filepath
+            return filepath, diagnostics
 
         except Exception as e:
             if filepath and filepath.exists():
                 filepath.unlink()
+                diagnostics.append(f"Removed partial file: {filepath.name}")
+            diagnostics.append(f"Attempt {idx} failed: {type(e).__name__}: {e}")
             print(f"Download attempt {idx}/{len(download_urls)} failed ({download_url}): {e}")
 
+    diagnostics.append("Download failed: all links exhausted.")
     print("Download failed: all links exhausted")
-    return None
+    return None, diagnostics
+
+
+def download_book(md5_hash: str, output_dir: Path, title: str = "") -> Optional[Path]:
+    """
+    Download a book from Anna's Archive.
+    
+    Args:
+        md5_hash: MD5 hash of the book
+        output_dir: Directory to save the downloaded file
+        title: Optional title for filename
+        
+    Returns:
+        Path to the downloaded file or None if failed
+    """
+    filepath, _ = download_book_with_diagnostics(md5_hash, output_dir, title)
+    return filepath

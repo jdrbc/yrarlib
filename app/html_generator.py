@@ -3,7 +3,7 @@ HTML generator for Kobo-friendly library interface using Jinja2 templates
 """
 
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
@@ -96,7 +96,12 @@ def generate_loading_html(title: str, message: str, target_url: str) -> str:
     )
 
 
-def generate_message_html(title: str, message: str, back_link: bool = True) -> str:
+def generate_message_html(
+    title: str,
+    message: str,
+    back_link: bool = True,
+    details: Optional[List[str]] = None
+) -> str:
     """
     Generate a simple message page.
     
@@ -104,6 +109,7 @@ def generate_message_html(title: str, message: str, back_link: bool = True) -> s
         title: Page title
         message: Message to display
         back_link: Whether to show back to library link
+        details: Optional detail lines to render for debugging
         
     Returns:
         HTML string
@@ -112,5 +118,6 @@ def generate_message_html(title: str, message: str, back_link: bool = True) -> s
     return template.render(
         title=title,
         message=message,
-        back_link=back_link
+        back_link=back_link,
+        details=details or []
     )
