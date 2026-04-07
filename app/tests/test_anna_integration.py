@@ -85,6 +85,30 @@ def test_get_download_urls_collects_multiple_links(monkeypatch):
     ]
 
 
+def test_get_download_urls_falls_back_when_org_dns_fails(monkeypatch):
+    monkeypatch.setenv("FAST_DOWNLOAD_KEY", "key")
+    monkeypatch.setenv("ANNA_ARCHIVE_BASE_URLS", "https://annas-archive.org")
+    calls = []
+
+    def fake_get(url, params=None, headers=None, timeout=None, **kwargs):
+        calls.append(url)
+        if url.startswith("https://annas-archive.org"):
+            raise requests.ConnectionError(
+                "HTTPSConnectionPool(host='annas-archive.org', port=443): Max retries exceeded"
+            )
+        if url.startswith("https://annas-archive.li"):
+            return FakeResponse(json_data={"download_url": "https://download-ok.example/file.epub"})
+        raise AssertionError(f"Unexpected URL called: {url}")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    links = get_download_urls("53d9d956bfdedeffd97c21c5dd83500e")
+
+    assert links == ["https://download-ok.example/file.epub"]
+    assert calls[0] == "https://annas-archive.org/dyn/api/fast_download.json"
+    assert calls[1] == "https://annas-archive.li/dyn/api/fast_download.json"
+
+
 def test_download_book_tries_next_link_after_failure(monkeypatch, tmp_path):
     md5 = "0123456789abcdef0123456789abcdef"
     links = ["https://bad-link.example/file.epub", "https://good-link.example/file.epub"]
